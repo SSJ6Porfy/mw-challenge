@@ -54,6 +54,10 @@
 // index and store the processed documents.  What would you recommend? You do  not  need to build this. 
 // However, please be prepared to discuss a recommendation for storing the processed documents and why you selected it.
 
+// I recently integrated Elasticsearch into one of my own projects.  Elasticsearch is a data store
+// that enables Full Text Search that delivers superior results to traditional data stores like SQL and NoSQL
+// when needing to query a large document. 
+
 // Node Class
 function Node(val) {
     this.val = val;
@@ -70,7 +74,7 @@ function makeTrie(root, part) {
         root.completeWord = true;
         return root;
     }
-    let newNode = new Node(part[0]);
+    var newNode = new Node(part[0]);
     // If root doesn't have a child "Part[0]" 
     // Then create one
     if (!root.children[part[0]]) {
@@ -92,21 +96,22 @@ function checkChr(tree, chr) {
 
 // Build hash of indexes
 function encryptedIndexes(root, doc) {
-    let indexes = {};
+    var indexes = {};
     // Start/end --- Index pointers
-    let start = -1;
-    let end = 1;
-    let idx = 0;
+    var start = -1;
+    var end = 1;
+    var idx = 0;
     while (idx < doc.length) {
-        let node = checkChr(root, doc[idx]);
-        let last = idx;
+        var node = checkChr(root, doc[idx]);
+        var last = idx;
+        
         // If doc at current idx has a child, enter loop
         while (node) {
             idx += 1;
             // Check if follow idx is also a node
-            let nextNode = checkChr(node, doc[idx]);
+            var nextNode = checkChr(node, doc[idx]);
             // Handle puncuation for completed words 
-            let punc = doc[idx] ? doc[idx].match(/[\s\?.,;]/) : false;
+            var punc = doc[idx] ? doc[idx].match(/[\s\?.,;]/) : false;
     
             if (node.completeWord && (punc || !doc[idx])) {
                 // if true then set the starting index of the word in the
@@ -116,7 +121,7 @@ function encryptedIndexes(root, doc) {
                 }
             }
             // Check for new line characters
-            let newLineChr = doc.charCodeAt(idx) === 10;
+            var newLineChr = doc.charCodeAt(idx) === 10;
             // If next idx is not a node break
             if (!nextNode && !newLineChr) {
                 idx = last + 1;
@@ -143,18 +148,18 @@ function encryptedIndexes(root, doc) {
 function encryptKeywords(keywordStr, doc) {
     // Regex handles spaces, commas and allow for inverted 
     // parentheses
-    let keywordArr = keywordStr.match(/(\w|\s)*\w((?=')|(?="))|\w+/g);
-    let root = new Node(null);
+    var keywordArr = keywordStr.match(/(\w|\s)*\w((?=')|(?="))|\w+/g);
+    var root = new Node(null);
 
     // Create prefix tree based on dictionary
-    keywordArr.forEach((keyword) => {
-        makeTrie(root, keyword);
-    });
+    for (var i = 0; i < keywordArr.length; i++) {
+        makeTrie(root, keywordArr[i]);
+    }
  
     // Creating new result string
-    let result = "";
-    let hash = encryptedIndexes(root, doc);
-    let idx = 0;
+    var result = "";
+    var hash = encryptedIndexes(root, doc);
+    var idx = 0;
     // Iterating thru original document.
     // Idx is found... Insert 4 Xs and increment by the length of the
     // original word.
@@ -172,17 +177,15 @@ function encryptKeywords(keywordStr, doc) {
 
 // Sample Tests
 
-// let str1 = "Hello World Boston 'Boston Red Sox'";
-// let doc1 = "blah blah\n Hello Boston Boston\n Red Sox when World travel Boston Red Sox";
+// var str1 = "Hello World Boston 'Boston Red Sox'";
+// var doc1 = "blah blah\n Hello Boston Boston\n Red Sox when World travel Boston Red Sox";
 
-// let str2 = "a b 'aba d f'";
-// let doc2 = "a b aba.";
+// var str2 = "a b 'aba d f'";
+// var doc2 = "a b aba.";
 
-// let str3 = "a b c d 'a b c e' 'b c e' 'c d e'";
-// let doc3 = "a b c de";
+// var str3 = "Bos, Boston, 'Bos Be' 'Boston Red Sox'";
+// var doc3 = "Boston Boston Bos Red Sox Boston Boston Red Sox";
 
 // console.log(encryptKeywords(str1, doc1), "1");
 // console.log(encryptKeywords(str2, doc2), "2");
-// console.log(encryptKeywords(str3, doc3), "3");
-
-
+// console.log(encryptKeywords(str3, doc3), doc3.length,"3");
