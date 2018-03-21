@@ -54,13 +54,95 @@
 // index and store the processed documents.  What would you recommend? You do  not  need to build this. 
 // However, please be prepared to discuss a recommendation for storing the processed documents and why you selected it.
 
+let gCount = 0;
 
-function encryptKeywords(keywordStr, doc) {
-    let keywordArr = str.match(/("[^"]+"|[^"\s]+)/g);
-
-    return true;
+function Node(val) {
+    this.val = val;
+    this.children = {};
+    this.completeWord = false;
+    this.count = 0;
 }
 
-let str = 'Hello World "Boston Red Sox"';
+function makeTrie(root, part) {
+    if (part === "") {
+        root.completeWord = true;
+        return root;
+    }
+    gCount += 1;
+    let newNode = new Node(part[0]);
+    if (!root.children[part[0]]) {
+        root.children[part[0]] = newNode;
+    } else {
+        newNode = root.children[part[0]];
+    }
+    makeTrie(newNode, part.slice(1));
+    return root;
+}
 
-console.log(encryptKeywords(str, "I love the Boston Red Sox"));
+function checkChr(tree, chr) {
+    if (!tree) { return false; }
+    gCount += 1;
+    tree.count += 1;
+    return tree.children[chr];
+}
+
+function encryptedIndexes(root, doc) {
+    let coords = {};
+    let start = -1;
+    let end = 1;
+    let i = 0;
+    while (i < doc.length) {
+        let chr = doc[i];
+        let node = checkChr(root, chr);
+        while (node) {
+            i += 1;
+            let nextNode = checkChr(node, doc[i]);
+            if (node && node.completeWord && (doc[i] === " " || !doc[i])) {
+                coords[start + 1] = end;
+            } else if (node && checkChr(root, doc[i + 1] && !nextNode)) {
+                i -= 1;
+            }
+            if (doc.charCodeAt(i) === 10) {
+                i += 1;
+                end += 1;
+                node = checkChr(node, doc[i]);
+            } else {
+                node = checkChr(node, doc[i]);
+            }
+            end += 1;
+        }
+        start = i;
+        end = 1;
+        i++;    
+    }
+    return coords;
+}
+
+function encryptKeywords(keywordStr, doc) {
+    let keywordArr = keywordStr.match(/(\w|\s)*\w((?=')|(?="))|\w+/g);
+    let root = new Node(null);
+
+    keywordArr.forEach((keyword) => {
+        makeTrie(root, keyword);
+    });
+
+    let result = "";
+    let hash = encryptedIndexes(root, doc);
+    let idx = 0;
+    while (idx < doc.length) {
+        if (hash[idx]) {
+            result += "XXXX";
+            idx += hash[idx];
+        } else {
+            result += doc[idx];
+            idx += 1;
+        }
+    }
+    return result;
+}
+
+let str = "a b 'aba'";
+let doc = "ab ababa";
+           
+console.log(encryptKeywords(str, doc));
+
