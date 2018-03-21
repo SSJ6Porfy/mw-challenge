@@ -54,21 +54,19 @@
 // index and store the processed documents.  What would you recommend? You do  not  need to build this. 
 // However, please be prepared to discuss a recommendation for storing the processed documents and why you selected it.
 
-let gCount = 0;
-
+// Node Class
 function Node(val) {
     this.val = val;
     this.children = {};
     this.completeWord = false;
-    this.count = 0;
 }
+
 
 function makeTrie(root, part) {
     if (part === "") {
         root.completeWord = true;
         return root;
     }
-    gCount += 1;
     let newNode = new Node(part[0]);
     if (!root.children[part[0]]) {
         root.children[part[0]] = newNode;
@@ -81,8 +79,6 @@ function makeTrie(root, part) {
 
 function checkChr(tree, chr) {
     if (!tree) { return false; }
-    gCount += 1;
-    tree.count += 1;
     return tree.children[chr];
 }
 
@@ -92,17 +88,23 @@ function encryptedIndexes(root, doc) {
     let end = 1;
     let i = 0;
     while (i < doc.length) {
-        let chr = doc[i];
-        let node = checkChr(root, chr);
+        let node = checkChr(root, doc[i]);
+        let last = i;
         while (node) {
             i += 1;
             let nextNode = checkChr(node, doc[i]);
-            if (node && node.completeWord && (doc[i] === " " || !doc[i])) {
-                coords[start + 1] = end;
-            } else if (node && checkChr(root, doc[i + 1] && !nextNode)) {
-                i -= 1;
+            let newLineChr = doc.charCodeAt(i) === 10;
+            let punc = doc[i] ? doc[i].match(/[\s\?.,;]/) : false;
+            if (node.completeWord && (punc || !doc[i])) {
+                if (start === -1 || doc[start] === " ") {
+                    coords[start + 1] = end;
+                }
             }
-            if (doc.charCodeAt(i) === 10) {
+            if (!nextNode && !newLineChr) {
+                i = last + 1;
+                break;
+            } 
+            if (newLineChr) {
                 i += 1;
                 end += 1;
                 node = checkChr(node, doc[i]);
@@ -141,8 +143,17 @@ function encryptKeywords(keywordStr, doc) {
     return result;
 }
 
-let str = "a b 'aba'";
-let doc = "ab ababa";
-           
-console.log(encryptKeywords(str, doc));
+// let str1 = "Hello World Boston 'Boston Red Sox'";
+// let doc1 = "blah blah\n Hello Boston Boston\n Red Sox when World travel Boston Red Sox";
+
+// let str2 = "a b 'aba d f'";
+// let doc2 = "a b aba.";
+
+// let str3 = "a b c d 'a b c e' 'b c e' 'c d e'";
+// let doc3 = "a b c de";
+
+// console.log(encryptKeywords(str1, doc1), "1");
+// console.log(encryptKeywords(str2, doc2), "2");
+// console.log(encryptKeywords(str3, doc3), "3");
+// console.log(encryptKeywords(str4, doc4), doc4.length);
 
