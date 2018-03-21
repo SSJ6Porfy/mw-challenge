@@ -61,76 +61,103 @@ function Node(val) {
     this.completeWord = false;
 }
 
-
+// Using a Prefix Trie
+// Using trie will allow for pattern searching
+// while iterating thru the document string
 function makeTrie(root, part) {
+    // If part is empty then set it root to completeWord = true
     if (part === "") {
         root.completeWord = true;
         return root;
     }
     let newNode = new Node(part[0]);
+    // If root doesn't have a child "Part[0]" 
+    // Then create one
     if (!root.children[part[0]]) {
         root.children[part[0]] = newNode;
     } else {
+    // Else retreive the child
         newNode = root.children[part[0]];
     }
+    // Make recursive call to continue building trie
     makeTrie(newNode, part.slice(1));
     return root;
 }
 
+// Check for child in root
 function checkChr(tree, chr) {
     if (!tree) { return false; }
     return tree.children[chr];
 }
 
+// Build hash of indexes
 function encryptedIndexes(root, doc) {
-    let coords = {};
+    let indexes = {};
+    // Start/end --- Index pointers
     let start = -1;
     let end = 1;
-    let i = 0;
-    while (i < doc.length) {
-        let node = checkChr(root, doc[i]);
-        let last = i;
+    let idx = 0;
+    while (idx < doc.length) {
+        let node = checkChr(root, doc[idx]);
+        let last = idx;
+        // If doc at current idx has a child, enter loop
         while (node) {
-            i += 1;
-            let nextNode = checkChr(node, doc[i]);
-            let newLineChr = doc.charCodeAt(i) === 10;
-            let punc = doc[i] ? doc[i].match(/[\s\?.,;]/) : false;
-            if (node.completeWord && (punc || !doc[i])) {
+            idx += 1;
+            // Check if follow idx is also a node
+            let nextNode = checkChr(node, doc[idx]);
+            // Handle puncuation for completed words 
+            let punc = doc[idx] ? doc[idx].match(/[\s\?.,;]/) : false;
+    
+            if (node.completeWord && (punc || !doc[idx])) {
+                // if true then set the starting index of the word in the
+                // hash along with the length of the current word
                 if (start === -1 || doc[start] === " ") {
-                    coords[start + 1] = end;
+                    indexes[start + 1] = end;
                 }
             }
+            // Check for new line characters
+            let newLineChr = doc.charCodeAt(idx) === 10;
+            // If next idx is not a node break
             if (!nextNode && !newLineChr) {
-                i = last + 1;
+                idx = last + 1;
                 break;
-            } 
+            }
+            // Increment Index by one if new line chr.  Handles
+            // phrases that may wrap around to new line. 
             if (newLineChr) {
-                i += 1;
+                idx += 1;
                 end += 1;
-                node = checkChr(node, doc[i]);
+                node = checkChr(node, doc[idx]);
             } else {
-                node = checkChr(node, doc[i]);
+                node = checkChr(node, doc[idx]);
             }
             end += 1;
         }
-        start = i;
+        start = idx;
         end = 1;
-        i++;    
+        idx++;    
     }
-    return coords;
+    return indexes;
 }
 
 function encryptKeywords(keywordStr, doc) {
+    // Regex handles spaces, commas and allow for inverted 
+    // parentheses
     let keywordArr = keywordStr.match(/(\w|\s)*\w((?=')|(?="))|\w+/g);
     let root = new Node(null);
 
+    // Create prefix tree based on dictionary
     keywordArr.forEach((keyword) => {
         makeTrie(root, keyword);
     });
-
+ 
+    // Creating new result string
     let result = "";
     let hash = encryptedIndexes(root, doc);
     let idx = 0;
+    // Iterating thru original document.
+    // Idx is found... Insert 4 Xs and increment by the length of the
+    // original word.
     while (idx < doc.length) {
         if (hash[idx]) {
             result += "XXXX";
@@ -142,6 +169,8 @@ function encryptKeywords(keywordStr, doc) {
     }
     return result;
 }
+
+// Sample Tests
 
 // let str1 = "Hello World Boston 'Boston Red Sox'";
 // let doc1 = "blah blah\n Hello Boston Boston\n Red Sox when World travel Boston Red Sox";
@@ -155,5 +184,5 @@ function encryptKeywords(keywordStr, doc) {
 // console.log(encryptKeywords(str1, doc1), "1");
 // console.log(encryptKeywords(str2, doc2), "2");
 // console.log(encryptKeywords(str3, doc3), "3");
-// console.log(encryptKeywords(str4, doc4), doc4.length);
+
 
